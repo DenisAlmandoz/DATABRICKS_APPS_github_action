@@ -1,0 +1,109 @@
+bundle:
+  name: devops
+
+include:
+  - databricks/resources/*.yml
+
+variables:
+  # -------- package ------------
+  package_name:
+    type: string
+    default: devops
+  package_version:
+    type: string
+    default: v0.3.2
+  spark_version:
+    type: string
+    default: 15.4.x-scala2.12
+
+  # -------- project ------------
+  cluster_policy_name:
+    type: string
+    description: Databricks cluster policy name
+
+  cluster_policy_id:
+    description: Databricks cluster policy ID (derived from name via lookup)
+    lookup:
+      cluster_policy: ${var.cluster_policy_name}
+
+  pause_status:
+    type: string
+    default: PAUSED
+
+  # -------- integration --------
+  branch_name:
+    type: string
+    default: no_branch_declared
+
+targets:
+
+  # DEV bundle per branch to accommodate simultaneous work
+  dev:
+    mode: development
+    presets:
+      name_prefix: '[${workspace.current_user.short_name}][${var.branch_name}] '
+      tags:
+        branch_name: ${var.branch_name}
+        deployment: cicd
+        package_version: ${var.package_version}
+
+    workspace:
+      host: https://adb-19836747944984.6.azuredatabricks.net
+      root_path: /Workspace/Users/${workspace.current_user.userName}/${var.branch_name}/.bundle/${bundle.name}
+
+    permissions:
+      - group_name: sand-dev-engineers
+        level: CAN_MANAGE
+
+    run_as:
+      service_principal_name: 82ee03b7-ab45-4b27-bbc2-7d3c97364206 # aka dbsp-sand-dev-01
+
+    variables:
+      cluster_policy_name: Job Multinode with GitHub Access
+      pause_status: PAUSED
+
+  stg:
+    mode: production
+    presets:
+      name_prefix: '[stg] '
+      tags:
+        deployment: cicd
+        package_version: ${var.package_version}
+
+    workspace:
+      host: https://adb-15828916344560.8.azuredatabricks.net
+      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}
+
+    permissions:
+      - group_name: sand-stg-engineers
+        level: CAN_RUN
+
+    run_as:
+      service_principal_name: 9aaf5bcd-5047-4a72-9b48-e5ebac950126 # aka dbsp-sand-stg-01
+
+    variables:
+      cluster_policy_name: Job Multinode with GitHub Access
+      pause_status: PAUSED
+
+  prd:
+    mode: production
+    presets:
+      name_prefix: '[prd] '
+      tags:
+        deployment: cicd
+        package_version: ${var.package_version}
+
+    workspace:
+      host: https://adb-14541358281675.10.azuredatabricks.net
+      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}
+
+    permissions:
+      - group_name: sand-prd-engineers
+        level: CAN_RUN
+
+    run_as:
+      service_principal_name: dd52ed3b-be0d-4e13-b281-1c6 # aka dbsp-sand-prd-01
+
+    variables:
+      cluster_policy_name: Job Multinode with GitHub Access
+      pause_status: PAUSED
