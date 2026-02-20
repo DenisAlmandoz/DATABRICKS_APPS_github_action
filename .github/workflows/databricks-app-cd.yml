@@ -1,0 +1,64 @@
+name: Deploy Databricks App via Bundle
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-22.04
+
+    env:
+      DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+      APP_NAME: ${{ vars.APP_NAME }}
+      WORKSPACE_REPO_PATH: ${{ vars.WORKSPACE_REPO_PATH }}
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up Azure CLI
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_SP_CREDS }}
+
+      - name: Install Databricks CLI
+        uses: databricks/setup-cli@main
+
+      - name: Authenticate Databricks CLI
+        shell: bash
+        run: |
+          DATABRICKS_TOKEN=$(az account get-access-token --resource 2ff814a6-3304-4ab8-85cb-cd0e6f879c1d --query accessToken --output tsv)
+          echo "::add-mask::$DATABRICKS_TOKEN"
+          echo "DATABRICKS_TOKEN=$DATABRICKS_TOKEN" >> "$GITHUB_ENV"
+
+      - name: Validate bundle
+        run: databricks bundle validate --target prd
+
+      - name: Deploy bundle
+        run: databricks bundle deploy --target prd
+
+      - name: Sync code to Databricks
+        run: databricks sync . "${{ env.WORKSPACE_REPO_PATH }}"
+
+      - name: Create DBS Application, if not exists
+        id: create_app
+        continue-on-error: true
+        shell: bash
+        run: |
+          databricks apps create --json "{\"name\":\"${{ env.APP_NAME }}\",\"user_api_scopes\":[\"sql\"]}"
+          databricks apps deploy "${{ env.APP_NAME }}" --source-code-path "${{ env.WORKSPACE_REPO_PATH }}"
+
+      - name: Reboot DBS App, if exists
+        if: steps.create_app.outcome == 'failure'
+        shell: bash
+        run: |
+          databricks apps stop "${{ env.APP_NAME }}" || echo "The app is not running, there is no need to stop it"
+          databricks apps start "${{ env.APP_NAME }}"
