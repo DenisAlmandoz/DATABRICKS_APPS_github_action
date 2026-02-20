@@ -4,61 +4,63 @@ on:
   push:
     branches:
       - main
+    paths:
+      - databricks.yml
+      - databricks/**
+      - app.py
+      - layout.py
+      - source.py
   workflow_dispatch:
+    inputs:
+      environment:
+        description: Databricks bundle environment/target (e.g., dev, stg, prd)
+        required: true
+        default: prd
+        type: choice
+        options:
+          - dev
+          - stg
+          - prd
 
 jobs:
   deploy:
-    runs-on: ubuntu-22.04
+    name: Deploy app resource
+    runs-on: ubuntu-latest
 
     env:
       DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
-      APP_NAME: ${{ vars.APP_NAME }}
-      WORKSPACE_REPO_PATH: ${{ vars.WORKSPACE_REPO_PATH }}
+      DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_CLIENT_ID }}
+      DATABRICKS_CLIENT_SECRET: ${{ secrets.DATABRICKS_CLIENT_SECRET }}
+      DATABRICKS_BUNDLE_ENV: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.environment || 'prd' }}
 
     steps:
-      - name: Checkout Repo
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Set up Azure CLI
-        uses: azure/login@v2
-        with:
-          creds: ${{ secrets.AZURE_SP_CREDS }}
-
-      - name: Install Databricks CLI
-        uses: databricks/setup-cli@main
-
-      - name: Authenticate Databricks CLI
-        shell: bash
-        run: |
-          DATABRICKS_TOKEN=$(az account get-access-token --resource 2ff814a6-3304-4ab8-85cb-cd0e6f879c1d --query accessToken --output tsv)
-          echo "::add-mask::$DATABRICKS_TOKEN"
-          echo "DATABRICKS_TOKEN=$DATABRICKS_TOKEN" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+      - uses: databricks/setup-cli@main
 
       - name: Validate bundle
-        run: databricks bundle validate --target prd
+        run: databricks bundle validate --target "$DATABRICKS_BUNDLE_ENV"
+        working-directory: .
 
       - name: Deploy bundle
-        run: databricks bundle deploy --target prd
+        run: databricks bundle deploy --target "$DATABRICKS_BUNDLE_ENV"
+        working-directory: .
 
-      - name: Sync code to Databricks
-        run: databricks sync . "${{ env.WORKSPACE_REPO_PATH }}"
+  update_app:
+    name: Start app and deploy app code
+    runs-on: ubuntu-latest
+    needs:
+      - deploy
 
-      - name: Create DBS Application, if not exists
-        id: create_app
-        continue-on-error: true
-        shell: bash
-        run: |
-          databricks apps create --json "{\"name\":\"${{ env.APP_NAME }}\",\"user_api_scopes\":[\"sql\"]}"
-          databricks apps deploy "${{ env.APP_NAME }}" --source-code-path "${{ env.WORKSPACE_REPO_PATH }}"
+    env:
+      DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+      DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_CLIENT_ID }}
+      DATABRICKS_CLIENT_SECRET: ${{ secrets.DATABRICKS_CLIENT_SECRET }}
+      DATABRICKS_BUNDLE_ENV: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.environment || 'prd' }}
 
-      - name: Reboot DBS App, if exists
-        if: steps.create_app.outcome == 'failure'
-        shell: bash
-        run: |
-          databricks apps stop "${{ env.APP_NAME }}" || echo "The app is not running, there is no need to stop it"
-          databricks apps start "${{ env.APP_NAME }}"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: databricks/setup-cli@main
+
+      - name: Run bundle app resource
+        run: databricks bundle run hello-world-app --target "$DATABRICKS_BUNDLE_ENV"
+        working-directory: .
