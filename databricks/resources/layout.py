@@ -2,7 +2,7 @@
 
 from dash import html
 
-from source import get_environment_hint, get_utc_timestamp, get_welcome_message
+from databricks.resources.source import get_environment_hint, get_utc_timestamp, get_welcome_message
 
 
 def build_layout() -> html.Div:

@@ -2,7 +2,7 @@
 
 from dash import Dash
 
-from layout import build_layout
+from databricks.resources.layout import build_layout
 
 app = Dash(__name__)
 app.layout = build_layout()
