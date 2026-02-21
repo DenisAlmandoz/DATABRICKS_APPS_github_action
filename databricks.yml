@@ -9,9 +9,11 @@ variables:
   package_name:
     type: string
     default: devops
+
   package_version:
     type: string
     default: v0.3.2
+
   spark_version:
     type: string
     default: 15.4.x-scala2.12
@@ -37,9 +39,12 @@ variables:
 
 targets:
 
-  # DEV bundle per branch to accommodate simultaneous work
+  # ============================================================
+  # DEV — per-branch development deployments
+  # ============================================================
   dev:
     mode: development
+
     presets:
       name_prefix: '[${workspace.current_user.short_name}][${var.branch_name}] '
       tags:
@@ -58,8 +63,13 @@ targets:
       cluster_policy_name: Job Multinode with GitHub Access
       pause_status: PAUSED
 
+
+  # ============================================================
+  # STG — shared staging environment
+  # ============================================================
   stg:
     mode: production
+
     presets:
       name_prefix: '[stg] '
       tags:
@@ -75,15 +85,19 @@ targets:
         level: CAN_RUN
 
     run_as:
-      service_principal_name: 8571ef2fb-3c7e-47d6-aa25-57f892656ada
-# aka dbsp-sand-stg-01
+      service_principal_name: 8571ef2fb-3c7e-47d6-aa25-57f892656ada  # aka dbsp-sand-stg-01
 
     variables:
       cluster_policy_name: Job Multinode with GitHub Access
       pause_status: PAUSED
 
+
+  # ============================================================
+  # PRD — production (NO cluster policy)
+  # ============================================================
   prd:
     mode: production
+
     presets:
       name_prefix: '[prd] '
       tags:
@@ -92,11 +106,12 @@ targets:
 
     workspace:
       host: https://dbc-b576ddfe-9e99.cloud.databricks.com
-      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}N
+      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}
 
     run_as:
-      service_principal_name: 8571ef2fb-3c7e-47d6-aa25-57f892656ada # aka dbsp-sand-prd-01
+      service_principal_name: 8571ef2fb-3c7e-47d6-aa25-57f892656ada  # aka dbsp-sand-prd-01
 
     variables:
-      cluster_policy_name: Job Multinode with GitHub Access
-      pause_status: PAUSED
+      # Explicitly disable policy lookup in production
+      cluster_policy_name: null
+      pause_status: PAUSEDx
