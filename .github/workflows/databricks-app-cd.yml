@@ -31,19 +31,18 @@ jobs:
       DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
       DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_CLIENT_ID }}
       DATABRICKS_CLIENT_SECRET: ${{ secrets.DATABRICKS_CLIENT_SECRET }}
+      DATABRICKS_AUTH_TYPE: oauth-m2m
       DATABRICKS_BUNDLE_ENV: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.environment || 'prd' }}
 
     steps:
       - uses: actions/checkout@v4
-      - uses: databricks/setup-cli@main
+      - uses: databricks/setup-cli@v1
 
       - name: Validate bundle
         run: databricks bundle validate --target "$DATABRICKS_BUNDLE_ENV"
-        working-directory: .
 
       - name: Deploy bundle
         run: databricks bundle deploy --target "$DATABRICKS_BUNDLE_ENV"
-        working-directory: .
 
   update_app:
     name: Start app and deploy app code
@@ -55,12 +54,12 @@ jobs:
       DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
       DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_CLIENT_ID }}
       DATABRICKS_CLIENT_SECRET: ${{ secrets.DATABRICKS_CLIENT_SECRET }}
+      DATABRICKS_AUTH_TYPE: oauth-m2m
       DATABRICKS_BUNDLE_ENV: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.environment || 'prd' }}
 
     steps:
       - uses: actions/checkout@v4
-      - uses: databricks/setup-cli@main
+      - uses: databricks/setup-cli@v1
 
       - name: Run bundle app resource
         run: databricks bundle run hello-world-app --target "$DATABRICKS_BUNDLE_ENV"
-        working-directory: .

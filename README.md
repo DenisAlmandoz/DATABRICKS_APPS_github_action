@@ -19,6 +19,7 @@ Add these in **GitHub → Settings → Secrets and variables → Actions → Rep
 
 1. `DATABRICKS_HOST`
    - Workspace URL used by the workflow (for example: `https://adb-xxxx.azuredatabricks.net`).
+<<<<<<< ours
 2. `DATABRICKS_CLIENT_ID`
    - Service Principal application/client ID.
 3. `DATABRICKS_CLIENT_SECRET`
@@ -32,6 +33,17 @@ No repository variables are strictly required. The workflow sets `DATABRICKS_BUN
 
 - `push` to `main` → `prd`
 - `workflow_dispatch` → selected input (`dev`, `stg`, `prd`)
+=======
+2. `AZURE_SP_CREDS`
+   - JSON credentials used by `azure/login` for your Service Principal.
+
+## GitHub repository variables
+
+Set these in **GitHub → Settings → Secrets and variables → Actions → Variables**:
+
+- `APP_NAME`
+- `WORKSPACE_REPO_PATH`
+>>>>>>> theirs
 
 ## How to run deployments
 
@@ -64,3 +76,30 @@ databricks bundle run hello-world-app --target dev
 - Place your app source code in this repo (currently `source_code_path: .`).
 - If your app code is in a subfolder, change `source_code_path` in `databricks/resources/app.yml`.
 - Your Service Principal must have permissions to deploy and run app resources in each workspace target.
+<<<<<<< ours
+=======
+
+
+## GitHub Actions configuration (merged flow)
+
+The workflow now merges bundle deployment with your Azure-auth + app sync/create/reboot sequence.
+
+### Required repository secrets
+
+- `DATABRICKS_HOST`: Databricks workspace URL (for example `https://adb-xxxx.azuredatabricks.net`)
+- `AZURE_SP_CREDS`: JSON credentials for `azure/login` (service principal)
+
+### Required repository variables
+
+- `APP_NAME`: Databricks App name (for example `hello-world-app`)
+- `WORKSPACE_REPO_PATH`: Databricks workspace path used by `databricks sync` (for example `/Workspace/Users/you@databricks.com/databricks_apps/hello-world-app`)
+
+### Deployment sequence in workflow
+
+1. Azure login with SP credentials.
+2. Acquire Databricks token from Azure (`az account get-access-token`).
+3. Bundle validate + deploy (`prd` target).
+4. Sync repository code to Databricks workspace path.
+5. Try to create app and deploy app code.
+6. If app already exists (create step fails), stop/start the app to reboot it.
+>>>>>>> theirs
