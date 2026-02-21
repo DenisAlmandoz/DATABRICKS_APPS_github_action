@@ -48,15 +48,11 @@ targets:
         package_version: ${var.package_version}
 
     workspace:
-      host: https://adb-19836747944984.6.azuredatabricks.net
+      host: https://dbc-b576ddfe-9e99.cloud.databricks.com
       root_path: /Workspace/Users/${workspace.current_user.userName}/${var.branch_name}/.bundle/${bundle.name}
 
-    permissions:
-      - group_name: sand-dev-engineers
-        level: CAN_MANAGE
-
     run_as:
-      service_principal_name: 82ee03b7-ab45-4b27-bbc2-7d3c97364206 # aka dbsp-sand-dev-01
+      service_principal_name: 8571ef2fb-3c7e-47d6-aa25-57f892656ada
 
     variables:
       cluster_policy_name: Job Multinode with GitHub Access
@@ -71,7 +67,7 @@ targets:
         package_version: ${var.package_version}
 
     workspace:
-      host: https://adb-15828916344560.8.azuredatabricks.net
+      host: https://dbc-b576ddfe-9e99.cloud.databricks.com
       root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}
 
     permissions:
@@ -79,7 +75,8 @@ targets:
         level: CAN_RUN
 
     run_as:
-      service_principal_name: 9aaf5bcd-5047-4a72-9b48-e5ebac950126 # aka dbsp-sand-stg-01
+      service_principal_name: 8571ef2fb-3c7e-47d6-aa25-57f892656ada
+# aka dbsp-sand-stg-01
 
     variables:
       cluster_policy_name: Job Multinode with GitHub Access
@@ -94,15 +91,11 @@ targets:
         package_version: ${var.package_version}
 
     workspace:
-      host: https://adb-14541358281675.10.azuredatabricks.net
-      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}
-
-    permissions:
-      - group_name: sand-prd-engineers
-        level: CAN_RUN
+      host: https://dbc-b576ddfe-9e99.cloud.databricks.com
+      root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}N
 
     run_as:
-      service_principal_name: dd52ed3b-be0d-4e13-b281-1c6 # aka dbsp-sand-prd-01
+      service_principal_name: 8571ef2fb-3c7e-47d6-aa25-57f892656ada # aka dbsp-sand-prd-01
 
     variables:
       cluster_policy_name: Job Multinode with GitHub Access
