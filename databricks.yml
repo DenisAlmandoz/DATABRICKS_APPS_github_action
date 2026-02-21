@@ -6,15 +6,12 @@ include:
 
 variables:
   package_version:
-    type: string
     default: v0.3.2
 
   branch_name:
-    type: string
     default: no_branch_declared
-
+    
 targets:
-
   dev:
     mode: development
     presets:

@@ -4,5 +4,3 @@ resources:
       name: hello-world-app
       description: Dash hello world app deployed through Databricks Asset Bundles.
       source_code_path: .
-      user_api_scopes:
-        - sql
