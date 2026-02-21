@@ -59,8 +59,8 @@ jobs:
       DATABRICKS_BUNDLE_ENV: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.environment || 'prd' }}
 
     steps:
-      - uses: actions/checkout@0.277.0
-      - uses: databricks/setup-cli@v1
+      - uses: actions/checkout@v4
+      - uses: databricks/setup-cli@0.277.0
 
       - name: Run bundle app resource
         run: databricks bundle run hello-world-app --target "$DATABRICKS_BUNDLE_ENV"
