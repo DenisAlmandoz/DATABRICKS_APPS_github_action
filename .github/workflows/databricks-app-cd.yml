@@ -39,7 +39,7 @@ jobs:
 
       # App details
       APP_NAME: hello-world-app
-      WORKSPACE_REPO_PATH: /Workspace/Users/${{ github.actor }}/.bundle/devops
+      WORKSPACE_REPO_PATH: /Workspace/Users/${{ env.DATABRICKS_CLIENT_ID }}/.bundle/devops
 
     steps:
       # Checkout repository
