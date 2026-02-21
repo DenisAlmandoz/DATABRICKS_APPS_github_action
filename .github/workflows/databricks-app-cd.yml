@@ -24,7 +24,7 @@ on:
 
 jobs:
   deploy:
-    name: Deploy app resource
+    name: Deploy Databricks Bundle and App
     runs-on: ubuntu-latest
 
     env:
@@ -39,14 +39,19 @@ jobs:
 
       # App details
       APP_NAME: hello-world-app
-      WORKSPACE_REPO_PATH: /Workspace/Users/${{ env.DATABRICKS_CLIENT_ID }}/.bundle/devops
+      BRANCH_NAME: ${{ github.ref_name || 'main' }}
 
     steps:
-      # Checkout repository
+      # Checkout repo
       - uses: actions/checkout@v4
 
       # Setup Databricks CLI and Bundle CLI
       - uses: databricks/setup-cli@v0.277.0
+
+      # Set dynamic workspace repo path for the service principal
+      - name: Set workspace repo path
+        run: |
+          echo "WORKSPACE_REPO_PATH=/Workspace/Users/${DATABRICKS_CLIENT_ID}/.bundle/devops/${BRANCH_NAME}" >> $GITHUB_ENV
 
       # Validate the bundle
       - name: Validate bundle
@@ -63,12 +68,12 @@ jobs:
       # Deploy or update the app safely
       - name: Deploy or update DBS App
         run: |
-          if databricks apps get "${{ env.APP_NAME }}" >/dev/null 2>&1; then
+          if databricks apps get "${APP_NAME}" >/dev/null 2>&1; then
             echo "App exists, deploying source code"
-            databricks apps deploy "${{ env.APP_NAME }}" --source-code-path "${{ env.WORKSPACE_REPO_PATH }}"
-            databricks apps restart "${{ env.APP_NAME }}" || echo "App was not running"
+            databricks apps deploy "${APP_NAME}" --source-code-path "${WORKSPACE_REPO_PATH}"
+            databricks apps restart "${APP_NAME}" || echo "App was not running"
           else
             echo "App does not exist, creating and deploying"
-            databricks apps create --json "{\"name\":\"${{ env.APP_NAME }}\"}"
-            databricks apps deploy "${{ env.APP_NAME }}" --source-code-path "${{ env.WORKSPACE_REPO_PATH }}"
+            databricks apps create --json "{\"name\":\"${APP_NAME}\"}"
+            databricks apps deploy "${APP_NAME}" --source-code-path "${WORKSPACE_REPO_PATH}"
           fi
