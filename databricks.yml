@@ -21,12 +21,13 @@ variables:
   # -------- project ------------
   cluster_policy_name:
     type: string
-    description: Databricks cluster policy name
+    default: ""   # <-- MAKE OPTIONAL
 
   cluster_policy_id:
     description: Databricks cluster policy ID (derived from name via lookup)
     lookup:
       cluster_policy: ${var.cluster_policy_name}
+    default: ""   # <-- prevents validation failure
 
   pause_status:
     type: string
@@ -40,7 +41,7 @@ variables:
 targets:
 
   # ============================================================
-  # DEV — per-branch development deployments
+  # DEV
   # ============================================================
   dev:
     mode: development
@@ -65,7 +66,7 @@ targets:
 
 
   # ============================================================
-  # STG — shared staging environment
+  # STG
   # ============================================================
   stg:
     mode: production
@@ -85,7 +86,7 @@ targets:
         level: CAN_RUN
 
     run_as:
-      service_principal_name: 8571ef2fb-3c7e-47d6-aa25-57f892656ada  # aka dbsp-sand-stg-01
+      service_principal_name: 8571ef2fb-3c7e-47d6-aa25-57f892656ada
 
     variables:
       cluster_policy_name: Job Multinode with GitHub Access
@@ -93,7 +94,7 @@ targets:
 
 
   # ============================================================
-  # PRD — production (NO cluster policy)
+  # PRD (NO POLICY)
   # ============================================================
   prd:
     mode: production
@@ -109,9 +110,8 @@ targets:
       root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}
 
     run_as:
-      service_principal_name: 8571ef2fb-3c7e-47d6-aa25-57f892656ada  # aka dbsp-sand-prd-01
+      service_principal_name: 8571ef2fb-3c7e-47d6-aa25-57f892656ada
 
     variables:
-      # Explicitly disable policy lookup in production
-      cluster_policy_name: null
-      pause_status: PAUSEDx
+      cluster_policy_name: ""   # explicitly empty
+      pause_status: PAUSED
