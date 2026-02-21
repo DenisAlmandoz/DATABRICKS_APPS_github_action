@@ -36,7 +36,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: databricks/setup-cli@v1
+      - uses: databricks/setup-cli@v0.277.0
+
 
       - name: Validate bundle
         run: databricks bundle validate --target "$DATABRICKS_BUNDLE_ENV"
