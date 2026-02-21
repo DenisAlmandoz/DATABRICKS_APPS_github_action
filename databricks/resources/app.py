@@ -1,12 +1,10 @@
-"""Main entry point for the Databricks Dash app."""
+from dash import Dash, html
+from layout import layout  # if you have a separate layout.py
 
-from dash import Dash
-
-from databricks.resources.layout import build_layout
-
+# create app
 app = Dash(__name__)
-app.layout = build_layout()
-server = app.server
+app.layout = layout if 'layout' in globals() else html.Div("Hello World")
 
+# Entry point for Databricks App
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8000, debug=False)
+    app.run_server(host="0.0.0.0", port=8080)
