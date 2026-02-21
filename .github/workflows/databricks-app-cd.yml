@@ -60,7 +60,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: databricks/setup-cli@0.277.0
+      - uses: databricks/setup-cli@v0.277.0
 
       - name: Run bundle app resource
         run: databricks bundle run hello-world-app --target "$DATABRICKS_BUNDLE_ENV"
