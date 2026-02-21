@@ -18,17 +18,6 @@ variables:
     type: string
     default: 15.4.x-scala2.12
 
-  # -------- project ------------
-  cluster_policy_name:
-    type: string
-    default: ""   # <-- MAKE OPTIONAL
-
-  cluster_policy_id:
-    description: Databricks cluster policy ID (derived from name via lookup)
-    lookup:
-      cluster_policy: ${var.cluster_policy_name}
-    default: ""   # <-- prevents validation failure
-
   pause_status:
     type: string
     default: PAUSED
@@ -37,6 +26,7 @@ variables:
   branch_name:
     type: string
     default: no_branch_declared
+
 
 targets:
 
@@ -59,10 +49,6 @@ targets:
 
     run_as:
       service_principal_name: 8571ef2fb-3c7e-47d6-aa25-57f892656ada
-
-    variables:
-      cluster_policy_name: Job Multinode with GitHub Access
-      pause_status: PAUSED
 
 
   # ============================================================
@@ -88,13 +74,9 @@ targets:
     run_as:
       service_principal_name: 8571ef2fb-3c7e-47d6-aa25-57f892656ada
 
-    variables:
-      cluster_policy_name: Job Multinode with GitHub Access
-      pause_status: PAUSED
-
 
   # ============================================================
-  # PRD (NO POLICY)
+  # PRD
   # ============================================================
   prd:
     mode: production
@@ -111,7 +93,3 @@ targets:
 
     run_as:
       service_principal_name: 8571ef2fb-3c7e-47d6-aa25-57f892656ada
-
-    variables:
-      cluster_policy_name: ""   # explicitly empty
-      pause_status: PAUSED
