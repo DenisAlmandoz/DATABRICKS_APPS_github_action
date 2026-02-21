@@ -28,16 +28,24 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
+      # Service principal authentication
       DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
       DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_CLIENT_ID }}
       DATABRICKS_CLIENT_SECRET: ${{ secrets.DATABRICKS_CLIENT_SECRET }}
       DATABRICKS_AUTH_TYPE: oauth-m2m
+
+      # Databricks bundle target
       DATABRICKS_BUNDLE_ENV: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.environment || 'prd' }}
+
+      # App details
       APP_NAME: hello-world-app
       WORKSPACE_REPO_PATH: /Workspace/Users/${{ github.actor }}/.bundle/devops
 
     steps:
+      # Checkout repository
       - uses: actions/checkout@v4
+
+      # Setup Databricks CLI and Bundle CLI
       - uses: databricks/setup-cli@v0.277.0
 
       # Validate the bundle
@@ -52,17 +60,15 @@ jobs:
       - name: Sync code to Databricks
         run: databricks sync . "${{ env.WORKSPACE_REPO_PATH }}"
 
-      # Create app if it doesn't exist
-      - name: Create DBS App if not exists
-        id: create-app
-        continue-on-error: true
+      # Deploy or update the app safely
+      - name: Deploy or update DBS App
         run: |
-          databricks apps create --json "{\"name\":\"${{ env.APP_NAME }}\"}" || echo "App already exists"
-          databricks apps deploy "${{ env.APP_NAME }}" --source-code-path "${{ env.WORKSPACE_REPO_PATH }}"
-
-      # Restart app if it already exists
-      - name: Restart DBS App if exists
-        if: steps.create-app.outcome == 'failure'
-        run: |
-          databricks apps stop "${{ env.APP_NAME }}" || echo "App is not running, no need to stop"
-          databricks apps start "${{ env.APP_NAME }}"
+          if databricks apps get "${{ env.APP_NAME }}" >/dev/null 2>&1; then
+            echo "App exists, deploying source code"
+            databricks apps deploy "${{ env.APP_NAME }}" --source-code-path "${{ env.WORKSPACE_REPO_PATH }}"
+            databricks apps restart "${{ env.APP_NAME }}" || echo "App was not running"
+          else
+            echo "App does not exist, creating and deploying"
+            databricks apps create --json "{\"name\":\"${{ env.APP_NAME }}\"}"
+            databricks apps deploy "${{ env.APP_NAME }}" --source-code-path "${{ env.WORKSPACE_REPO_PATH }}"
+          fi
