@@ -15,7 +15,7 @@ on:
       environment:
         description: Databricks bundle environment/target (e.g., dev, stg, prd)
         required: true
-        default: prd
+        default: dev
         type: choice
         options:
           - dev
@@ -24,56 +24,67 @@ on:
 
 jobs:
   deploy:
-    name: Deploy Databricks Bundle and App
+    name: Deploy Databricks App
     runs-on: ubuntu-latest
 
     env:
-      # Service principal authentication
+      # SP credentials
       DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
       DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_CLIENT_ID }}
       DATABRICKS_CLIENT_SECRET: ${{ secrets.DATABRICKS_CLIENT_SECRET }}
       DATABRICKS_AUTH_TYPE: oauth-m2m
 
-      # Databricks bundle target
-      DATABRICKS_BUNDLE_ENV: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.environment || 'prd' }}
-
-      # App details
+      # Bundle target and app info
+      DATABRICKS_BUNDLE_ENV: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.environment || 'dev' }}
       APP_NAME: hello-world-app
       BRANCH_NAME: ${{ github.ref_name || 'main' }}
 
     steps:
-      # Checkout repo
       - uses: actions/checkout@v4
-
-      # Setup Databricks CLI and Bundle CLI
       - uses: databricks/setup-cli@v0.277.0
 
-      # Set dynamic workspace repo path for the service principal
+      # Set workspace path for SP
       - name: Set workspace repo path
         run: |
           echo "WORKSPACE_REPO_PATH=/Workspace/Users/${DATABRICKS_CLIENT_ID}/.bundle/devops/${BRANCH_NAME}" >> $GITHUB_ENV
 
-      # Validate the bundle
+      # Validate bundle
       - name: Validate bundle
         run: databricks bundle validate --target "$DATABRICKS_BUNDLE_ENV"
 
-      # Deploy the bundle
+      # Deploy bundle (uploads code/configs)
       - name: Deploy bundle
         run: databricks bundle deploy --target "$DATABRICKS_BUNDLE_ENV"
 
-      # Sync code to Databricks workspace
+      # Sync local code to workspace folder
       - name: Sync code to Databricks
         run: databricks sync . "${{ env.WORKSPACE_REPO_PATH }}"
 
-      # Deploy or update the app safely
-      - name: Deploy or update DBS App
+      # Create, deploy, and start the app
+      - name: Create, deploy, and run DBS App
         run: |
+          # Check if app exists
           if databricks apps get "${APP_NAME}" >/dev/null 2>&1; then
-            echo "App exists, deploying source code"
-            databricks apps deploy "${APP_NAME}" --source-code-path "${WORKSPACE_REPO_PATH}"
-            databricks apps restart "${APP_NAME}" || echo "App was not running"
+            echo "App exists, stopping any active deployment..."
+            databricks apps stop "${APP_NAME}" || echo "App not running"
           else
-            echo "App does not exist, creating and deploying"
+            echo "App does not exist, creating..."
             databricks apps create --json "{\"name\":\"${APP_NAME}\"}"
-            databricks apps deploy "${APP_NAME}" --source-code-path "${WORKSPACE_REPO_PATH}"
           fi
+
+          # Wait until app is ready
+          echo "Waiting for app to be ready..."
+          for i in {1..10}; do
+            STATUS=$(databricks apps get "${APP_NAME}" --output JSON | jq -r '.status.state')
+            if [ "$STATUS" != "STOPPING" ] && [ "$STATUS" != "DEPLOYING" ]; then
+              echo "App is ready"
+              break
+            fi
+            echo "App still busy, waiting 5 seconds..."
+            sleep 5
+          done
+
+          # Deploy code and start app
+          echo "Deploying app code..."
+          databricks apps deploy "${APP_NAME}" --source-code-path "${WORKSPACE_REPO_PATH}"
+          databricks apps start "${APP_NAME}" || echo "App was not running"
