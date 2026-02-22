@@ -5,6 +5,7 @@ from layout import layout  # if you have a separate layout.py
 
 # create app
 
+
 app = Dash(__name__)
 app.layout = layout if 'layout' in globals() else html.Div("Hello World")
 
