@@ -1,6 +1,5 @@
 resources:
   apps:
-    hello-world-app:
-      name: hello-world-app
-      description: Dash hello world app deployed through Databricks Asset Bundles.
+    hello_world_app:
+      description: Dash hello world app deployed via Databricks Asset Bundles.
       source_code_path: .
