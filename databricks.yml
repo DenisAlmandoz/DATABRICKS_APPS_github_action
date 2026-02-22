@@ -5,54 +5,24 @@ include:
   - databricks/resources/*.yml
 
 variables:
-  package_version:
-    default: v0.3.2
-
   branch_name:
-    description: Git branch being deployed
     default: main
 
 targets:
   dev:
     mode: development
-
-    presets:
-      name_prefix: '[${workspace.current_user.short_name}][${var.branch_name}] '
-      tags:
-        branch_name: ${var.branch_name}
-        deployment: cicd
-        package_version: ${var.package_version}
-
     workspace:
       host: https://dbc-b576ddfe-9e99.cloud.databricks.com
       root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${var.branch_name}
 
   stg:
     mode: production
-
-    presets:
-      name_prefix: '[stg] '
-      tags:
-        deployment: cicd
-        package_version: ${var.package_version}
-
     workspace:
       host: https://dbc-b576ddfe-9e99.cloud.databricks.com
       root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/stg
 
-    permissions:
-      - group_name: sand-stg-engineers
-        level: CAN_RUN
-
   prd:
     mode: production
-
-    presets:
-      name_prefix: '[prd] '
-      tags:
-        deployment: cicd
-        package_version: ${var.package_version}
-
     workspace:
       host: https://dbc-b576ddfe-9e99.cloud.databricks.com
       root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/prd

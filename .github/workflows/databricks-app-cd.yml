@@ -1,4 +1,4 @@
-name: Deploy Databricks App via Bundle
+name: Deploy Databricks Apps via Bundle
 
 on:
   push:
@@ -25,7 +25,6 @@ on:
 
 jobs:
   deploy:
-    name: Deploy Databricks App
     runs-on: ubuntu-latest
 
     env:
@@ -41,22 +40,14 @@ jobs:
       - uses: actions/checkout@v4
       - uses: databricks/setup-cli@v0.277.0
 
-      # Validate configuration
+      # Validate the bundle config
       - name: Validate bundle
         run: |
           databricks bundle validate \
             --target "$DATABRICKS_BUNDLE_ENV" \
             --var branch_name="${BRANCH_NAME}"
 
-      # 🔥 Reset state if drift happened (fixes deleted app issue)
-      - name: Reset bundle state (safe)
-        run: |
-          databricks bundle destroy \
-            --target "$DATABRICKS_BUNDLE_ENV" \
-            --var branch_name="${BRANCH_NAME}" \
-            --auto-approve || true
-
-      # Deploy (creates or updates apps)
+      # Deploy bundle (creates or updates apps)
       - name: Deploy bundle
         run: |
           databricks bundle deploy \
